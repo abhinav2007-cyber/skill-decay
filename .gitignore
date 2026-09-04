@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *.class
@@ -23,6 +23,7 @@ ENV/
 # SQLite database (runtime artifact)
 backend/sda.db
 backend/*.db
+*.db
 
 # IDE
 .vscode/

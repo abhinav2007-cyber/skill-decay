@@ -24,30 +24,30 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# ── Patch pyBKT metrics before importing Model ─────────────────────────────────
-# sklearn 1.9.0 changed log_loss signature in a way that breaks pyBKT's
-# fetch_supported_metrics(). We stub it to return an empty dict — we never call
-# Model.evaluate(), so this has zero impact on our usage.
+# ── Patch pyBKT / sklearn metrics before importing Model ────────────────────────
+# In sklearn >= 1.9, metrics functions like log_loss raise AttributeError when
+# passed raw Python lists instead of ndarrays, which breaks pyBKT's module-level
+# fetch_supported_metrics(). We wrap them to raise TypeError instead so pyBKT's
+# try/except TypeError catches them cleanly during import.
 try:
-    import pyBKT.util.metrics as _bkt_metrics  # type: ignore
-    if not hasattr(_bkt_metrics, "_patched_for_sklearn19"):
-        original_fetch = _bkt_metrics.fetch_supported_metrics
+    import sklearn.metrics._classification as _smc
+    import sklearn.metrics._regression as _smr
 
-        def _safe_fetch():
-            try:
-                return original_fetch()
-            except AttributeError:
-                return {}
-
-        _bkt_metrics.fetch_supported_metrics = _safe_fetch
-        _bkt_metrics.SUPPORTED_METRICS = {
-            "accuracy": _bkt_metrics.accuracy,
-            "auc": _bkt_metrics.auc,
-            "rmse": _bkt_metrics.rmse,
-        }
-        _bkt_metrics._patched_for_sklearn19 = True
+    for _mod in (_smc, _smr):
+        for _name in dir(_mod):
+            if _name.endswith(("_loss", "_score", "_error")):
+                _fn = getattr(_mod, _name)
+                if callable(_fn):
+                    def _make_w(_f):
+                        def _w(*a, **kw):
+                            try:
+                                return _f(*a, **kw)
+                            except AttributeError:
+                                raise TypeError("sklearn 1.9 compatibility wrapper")
+                        return _w
+                    setattr(_mod, _name, _make_w(_fn))
 except Exception as patch_err:
-    logger.warning("Could not patch pyBKT metrics: %s", patch_err)
+    logger.warning("Could not patch sklearn metrics for pyBKT: %s", patch_err)
 
 from pyBKT.models import Model as BKTModel  # type: ignore  # noqa: E402
 

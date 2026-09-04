@@ -7,21 +7,33 @@ export default function QuizBlock({ result, onSubmitAnswer, submitting, answerRe
 
   if (action === "WAIT") return null;
 
+  const displayName = subtopic ? subtopic.replace(/_/g, " ") : "";
+
   if (action === "RECOMMEND") {
     return (
-      <div className="cycle-item fade-in">
-        <div className="cycle-item-header">
+      <div className="action-block">
+        <div className="action-header">
           <div>
-            <div className="cycle-item-skill">{skill}</div>
-            <div className="cycle-item-name">{subtopic.replace(/_/g, " ")}</div>
+            <div className="skill-name">{displayName}</div>
+            <div className="skill-topic">{skill}</div>
           </div>
-          <span className="badge badge-recommend">RECOMMEND</span>
+          <span className="badge-outline color-blue" style={{ borderColor: "var(--accent)" }}>RECOMMEND</span>
         </div>
-        <div className="cycle-reason">{reason}</div>
+        
+        {reason && (
+          <div className="reasoning-box">
+            <strong>System Rationale:</strong> {reason}
+          </div>
+        )}
+
         {result.recommendation && (
-          <div className="rec-panel" style={{ marginTop: "0.75rem" }}>
-            <div className="section-label" style={{ marginBottom: "0.5rem" }}>📚 Refresher</div>
-            <p className="rec-text">{result.recommendation}</p>
+          <div className="card" style={{ background: "var(--bg-base)", border: "1px solid var(--border)", marginTop: "1rem" }}>
+            <div style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
+              Suggested Review Material
+            </div>
+            <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              {result.recommendation}
+            </p>
           </div>
         )}
       </div>
@@ -30,19 +42,24 @@ export default function QuizBlock({ result, onSubmitAnswer, submitting, answerRe
 
   if (action === "ESCALATE") {
     return (
-      <div className="cycle-item fade-in">
-        <div className="cycle-item-header">
+      <div className="action-block" style={{ borderLeft: "3px solid var(--danger)" }}>
+        <div className="action-header">
           <div>
-            <div className="cycle-item-skill">{skill}</div>
-            <div className="cycle-item-name">{subtopic.replace(/_/g, " ")}</div>
+            <div className="skill-name">{displayName}</div>
+            <div className="skill-topic">{skill}</div>
           </div>
-          <span className="badge badge-escalate">ESCALATE</span>
+          <span className="badge-outline color-red" style={{ borderColor: "var(--danger)" }}>ESCALATE</span>
         </div>
-        <div className="esc-panel">
-          <span className="esc-icon">⚠️</span>
-          <span className="esc-text">Critical decay detected. Immediate action required.</span>
+
+        <div className="alert alert-error" style={{ margin: "0.75rem 0" }}>
+          <strong>Critical Decay Warning:</strong> Severe retention decline detected without recent practice. Priority revision advised.
         </div>
-        <div className="cycle-reason">{reason}</div>
+
+        {reason && (
+          <div className="reasoning-box">
+            <strong>Observation:</strong> {reason}
+          </div>
+        )}
       </div>
     );
   }
@@ -64,31 +81,46 @@ export default function QuizBlock({ result, onSubmitAnswer, submitting, answerRe
     };
 
     return (
-      <div className="cycle-item fade-in">
-        <div className="cycle-item-header">
+      <div className="action-block">
+        <div className="action-header">
           <div>
-            <div className="cycle-item-skill">{skill}</div>
-            <div className="cycle-item-name">{subtopic.replace(/_/g, " ")}</div>
+            <div className="skill-name">{displayName}</div>
+            <div className="skill-topic">{skill}</div>
           </div>
-          <span className="badge badge-test">TEST NOW</span>
+          <span className="badge-outline color-amber" style={{ borderColor: "var(--warning)" }}>TEST REQUIRED</span>
         </div>
-        <div className="cycle-reason">{reason}</div>
 
-        <div className="quiz-panel" style={{ marginTop: "1rem" }}>
-          <div className="quiz-question">{q.question}</div>
-          <div className="quiz-options">
+        {reason && (
+          <div className="reasoning-box">
+            <strong>Diagnosis:</strong> {reason}
+          </div>
+        )}
+
+        <div style={{ marginTop: "1rem" }}>
+          <div style={{ fontSize: "0.9rem", fontWeight: 500, marginBottom: "0.75rem", color: "var(--text-primary)" }}>
+            {q.question}
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {Object.entries(q.options || {}).map(([key, val]) => {
-              let cls = "quiz-option";
+              let optionClass = "quiz-option";
               if (isAnswered) {
                 const correctKey = answerResult?.grade_result?.correct_answer;
-                if (key === correctKey) cls += " correct";
-                else if (key === selected) cls += " wrong";
+                if (key === correctKey) optionClass += " correct";
+                else if (key === selected) optionClass += " wrong";
               } else if (selected === key) {
-                cls += " selected";
+                optionClass += " selected";
               }
+
               return (
-                <div key={key} className={cls} onClick={() => !submitted && setSelected(key)}>
-                  <span className="option-key">{key}</span>
+                <div
+                  key={key}
+                  className={optionClass}
+                  onClick={() => !submitted && setSelected(key)}
+                  style={{ cursor: submitted ? "default" : "pointer" }}
+                >
+                  <div className="radio-circle" />
+                  <span style={{ fontWeight: 600, minWidth: "1.5rem" }}>{key}.</span>
                   <span>{val}</span>
                 </div>
               );
@@ -96,39 +128,45 @@ export default function QuizBlock({ result, onSubmitAnswer, submitting, answerRe
           </div>
 
           {isAnswered ? (
-            <div className={`quiz-feedback ${isCorrect ? "correct" : "wrong"}`}>
-              {isCorrect ? "✓ Correct!" : `✗ Incorrect — correct answer: ${answerResult?.grade_result?.correct_answer}`}
+            <div className={`alert ${isCorrect ? "alert-success" : "alert-error"}`} style={{ marginTop: "1rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
+                {isCorrect ? "✓ Correct evaluation" : `✗ Incorrect — Correct answer was (${answerResult?.grade_result?.correct_answer})`}
+              </div>
               {answerResult?.grade_result?.explanation && (
-                <div className="quiz-explanation">{answerResult.grade_result.explanation}</div>
+                <div style={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  {answerResult.grade_result.explanation}
+                </div>
               )}
             </div>
           ) : (
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleSubmit}
-              disabled={!selected || submitting}
-            >
-              {submitting ? <span className="spinner spinner-sm" /> : null}
-              Submit Answer
-            </button>
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                className="btn btn-primary"
+                onClick={handleSubmit}
+                disabled={!selected || submitting}
+              >
+                {submitting ? <span className="spinner" /> : null}
+                Submit Evaluation
+              </button>
+            </div>
           )}
         </div>
       </div>
     );
   }
 
-  // Fallback for TEST_NOW without quiz data
+  // Fallback for TEST_NOW without quiz data or errors
   return (
-    <div className="cycle-item fade-in">
-      <div className="cycle-item-header">
+    <div className="action-block">
+      <div className="action-header">
         <div>
-          <div className="cycle-item-skill">{skill}</div>
-          <div className="cycle-item-name">{subtopic.replace(/_/g, " ")}</div>
+          <div className="skill-name">{displayName}</div>
+          <div className="skill-topic">{skill}</div>
         </div>
-        <span className="badge badge-test">TEST NOW</span>
+        <span className="badge-outline">TEST NOW</span>
       </div>
-      <div className="cycle-reason">{reason}</div>
-      {result.error && <div className="alert alert-error" style={{ marginTop: "0.5rem" }}>⚠ {result.error}</div>}
+      {reason && <div className="reasoning-box">{reason}</div>}
+      {result.error && <div className="alert alert-error">⚠ {result.error}</div>}
     </div>
   );
 }

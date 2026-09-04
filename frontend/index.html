@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -14,4 +15,1258 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skill Decay Alerts — Intelligent Skill Monitoring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+            mono: ['ui-monospace', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            status: {
+              test: '#10b981',
+              recommend: '#0ea5e9',
+              wait: '#f59e0b',
+              escalate: '#ef4444'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .donut-ring {
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .pulse-subtle { animation: pulseSubtle 2.5s infinite; }
+    @keyframes pulseSubtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.08); }
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- Top Notification / Toast Area -->
+  <div id="toast-area" class="fixed top-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+  <div class="flex flex-1 min-h-screen">
+
+    <!-- ── Left Sidebar ────────────────────────────────────────────────────────── -->
+    <aside class="w-64 bg-white border-r border-slate-200/90 flex flex-col justify-between shrink-0 p-5 hidden md:flex">
+      <div>
+        <!-- Brand / Logo -->
+        <div class="flex items-center gap-3 px-2 py-2 mb-8">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="font-extrabold text-slate-900 tracking-tight leading-none text-base">Skill Decay Alerts</h1>
+            <p class="text-[11px] text-slate-500 mt-1 font-medium">Continuous Retention AI</p>
+          </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="space-y-1.5 font-medium text-sm">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard"
+            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-150 bg-blue-50 text-blue-700 font-semibold shadow-xs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span>Home</span>
+          </button>
+
+          <button onclick="switchTab('strength')" id="nav-strength"
+            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-150 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            <span>Strength Report</span>
+          </button>
+
+          <button onclick="openActionModal()"
+            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-150 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a3.75 3.75 0 01-5.303 0l-.347-.347z"/>
+            </svg>
+            <span>Learning Resources</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="pt-6 border-t border-slate-100">
+        <div class="bg-gradient-to-br from-indigo-50/70 to-blue-50/70 rounded-xl p-3.5 border border-indigo-100/60 mb-3">
+          <div class="flex items-center gap-2 text-xs font-bold text-indigo-900 mb-1">
+            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+            Featherless AI Active
+          </div>
+          <p class="text-[11px] text-slate-600 leading-relaxed">Continuous decay modeling, calibrated MCQs, and actionable recommendations.</p>
+        </div>
+        <p class="text-xs text-slate-500 font-medium px-1">Better skills. Brighter tomorrow.</p>
+      </div>
+    </aside>
+
+    <!-- ── Main Workspace ──────────────────────────────────────────────────────── -->
+    <div class="flex-1 flex flex-col min-w-0">
+
+      <!-- Top Header / App Bar -->
+      <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+        <!-- Greeting & Subtitle -->
+        <div>
+          <h2 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <span>Good day, Demo User</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Active Learner
+            </span>
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">Here is your skill retention and decay status at a glance.</p>
+        </div>
+
+        <!-- Right Quick Controls -->
+        <div class="flex items-center flex-wrap gap-2.5">
+          <!-- Simulated Date Chip -->
+          <div class="flex items-center gap-2.5 bg-slate-50 border border-slate-200/90 rounded-xl px-3.5 py-1.5 shadow-2xs">
+            <div class="relative flex items-center justify-center">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping absolute"></span>
+            </div>
+            <div class="flex flex-col text-left">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none">Simulated Clock</span>
+              <span id="clock-badge" class="font-bold text-slate-800 text-xs mt-0.5 leading-none">Jul 14, 2025</span>
+            </div>
+          </div>
+
+          <!-- Time Travel / Fast-Forward Simulation Controller -->
+          <div class="flex items-center gap-1.5 bg-white border border-slate-200/90 rounded-xl p-1 shadow-2xs hover:border-amber-300 transition-all">
+            <!-- Feature Label & Icon -->
+            <div class="flex items-center gap-1.5 pl-2 pr-1 py-0.5">
+              <div class="w-5 h-5 rounded-md bg-amber-50 text-amber-600 border border-amber-200/60 flex items-center justify-center text-xs">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </div>
+              <span class="text-xs font-bold text-slate-700">Time Travel</span>
+            </div>
+
+            <!-- Quick-Jump Presets -->
+            <div class="flex items-center gap-0.5 bg-slate-50 border border-slate-200/70 rounded-lg p-0.5">
+              <button type="button" onclick="advanceTime(7)" title="Fast-forward 7 days"
+                class="px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-amber-700 hover:bg-white rounded-md transition-all cursor-pointer">
+                +7d
+              </button>
+              <button type="button" onclick="advanceTime(14)" title="Fast-forward 14 days"
+                class="px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-amber-700 hover:bg-white rounded-md transition-all cursor-pointer">
+                +14d
+              </button>
+              <button type="button" onclick="advanceTime(30)" title="Fast-forward 30 days"
+                class="px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-amber-700 hover:bg-white rounded-md transition-all cursor-pointer">
+                +30d
+              </button>
+            </div>
+
+            <!-- Custom Days Stepper -->
+            <div class="flex items-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:border-amber-500 focus-within:bg-white transition-colors">
+              <input id="advance-days" type="number" value="30" min="1" max="365"
+                onkeydown="if(event.key==='Enter') advanceTime()"
+                class="w-9 text-center text-xs font-extrabold text-slate-900 bg-transparent focus:outline-none"
+                title="Type custom days and press Enter or Advance" />
+              <span class="text-[10px] font-semibold text-slate-400 ml-0.5">d</span>
+            </div>
+
+            <!-- Advance Button -->
+            <button id="btn-advance-time" onclick="advanceTime()" title="Advance simulated clock"
+              class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
+              <svg id="btn-advance-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span id="btn-advance-text">Advance</span>
+            </button>
+          </div>
+
+          <!-- Run Cycle Button -->
+          <button id="btn-run-cycle" onclick="runCycle()"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-sm hover:shadow flex items-center gap-1.5 disabled:opacity-50">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span id="btn-run-cycle-text">Run Decision Cycle</span>
+          </button>
+
+          <!-- Refresh -->
+          <button onclick="loadSkills()" title="Refresh Skills"
+            class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+
+          <!-- User Pill -->
+          <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
+            <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs">
+              DU
+            </div>
+            <span class="text-xs font-medium text-slate-700 hidden lg:inline">demo_user</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Body Container -->
+      <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
+
+        <!-- ── TAB 1: DASHBOARD VIEW ─────────────────────────────────────────── -->
+        <div id="view-dashboard" class="fade-in space-y-6">
+
+          <!-- 4 Executive KPI Cards (Exact replica of reference UI) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+            <!-- Card 1: Healthy Skills -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                  </div>
+                  <span class="text-xs font-semibold text-slate-500">Healthy Skills</span>
+                </div>
+                <div class="text-2xl font-extrabold text-slate-900 tracking-tight" id="kpi-healthy">-- / 10</div>
+                <p class="text-xs text-slate-400 mt-1">sub-topics are on track</p>
+              </div>
+            </div>
+
+            <!-- Card 2: Needs Attention -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                  </div>
+                  <span class="text-xs font-semibold text-slate-500">Needs Attention</span>
+                </div>
+                <div class="text-2xl font-extrabold text-amber-600 tracking-tight" id="kpi-attention">-- / 10</div>
+                <p class="text-xs text-slate-400 mt-1">sub-topics may be decaying</p>
+              </div>
+            </div>
+
+            <!-- Card 3: Recommended Actions -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                  </div>
+                  <span class="text-xs font-semibold text-slate-500">Recommended Actions</span>
+                </div>
+                <div class="text-2xl font-extrabold text-sky-600 tracking-tight" id="kpi-recommended">--</div>
+                <p class="text-xs text-slate-400 mt-1">resources or reviews suggested</p>
+              </div>
+            </div>
+
+            <!-- Card 4: Escalations -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </div>
+                  <span class="text-xs font-semibold text-slate-500">Escalations</span>
+                </div>
+                <div class="text-2xl font-extrabold text-rose-600 tracking-tight" id="kpi-escalated">--</div>
+                <p class="text-xs text-slate-400 mt-1">requires targeted support</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Main 2-Column Split -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left / Center: Sub-topic Overview Table (2 Cols) -->
+            <div class="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden flex flex-col">
+              
+              <!-- Card Header with Filters & Status Legend -->
+              <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base">Sub-topic Overview</h3>
+                  <p class="text-xs text-slate-400 mt-0.5">Real-time status evaluated across continuous practice and decay.</p>
+                </div>
+
+                <!-- Status Legend -->
+                <div class="flex items-center gap-3 text-xs font-medium text-slate-500">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Test Now</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-sky-500"></span>Recommend</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span>Wait</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Escalate</span>
+                </div>
+              </div>
+
+              <!-- Filter Bar & Search -->
+              <div class="px-5 py-3 bg-slate-50/70 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-1.5 text-xs">
+                  <button onclick="filterSubtopics('all')" id="filter-all" class="px-3 py-1 rounded-lg font-semibold bg-white border border-slate-300 text-slate-800 shadow-2xs">All (10)</button>
+                  <button onclick="filterSubtopics('attention')" id="filter-attention" class="px-3 py-1 rounded-lg font-medium text-slate-600 hover:bg-white hover:text-slate-800 transition-colors">Needs Action</button>
+                  <button onclick="filterSubtopics('procedural')" id="filter-procedural" class="px-3 py-1 rounded-lg font-medium text-slate-600 hover:bg-white hover:text-slate-800 transition-colors">Procedural</button>
+                  <button onclick="filterSubtopics('conceptual')" id="filter-conceptual" class="px-3 py-1 rounded-lg font-medium text-slate-600 hover:bg-white hover:text-slate-800 transition-colors">Conceptual</button>
+                </div>
+
+                <div class="relative">
+                  <input type="text" id="table-search" placeholder="Search skill or topic..." oninput="handleSearch(this.value)"
+                    class="bg-white border border-slate-200 text-xs rounded-xl pl-7 pr-3 py-1.5 focus:outline-none focus:border-indigo-500 w-44" />
+                  <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Table -->
+              <div class="overflow-x-auto custom-scrollbar flex-1">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50/50 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100">
+                    <tr>
+                      <th class="py-3 px-4">Skill</th>
+                      <th class="py-3 px-4">Sub-topic</th>
+                      <th class="py-3 px-3">Type</th>
+                      <th class="py-3 px-3">Status</th>
+                      <th class="py-3 px-4">Reason / Assessment</th>
+                      <th class="py-3 px-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="subtopic-table-body" class="divide-y divide-slate-100 text-slate-700">
+                    <tr>
+                      <td colspan="6" class="text-center py-10 text-slate-400">Loading skill records...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Recent Actions & Learning Progress (1 Col) -->
+            <div class="space-y-6 flex flex-col">
+
+              <!-- Recent Actions Feed -->
+              <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex-1">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-bold text-slate-900 text-sm">Recent Actions</h3>
+                  <span id="cycle-count-badge" class="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Updated</span>
+                </div>
+                <div id="recent-actions-list" class="space-y-3.5">
+                  <div class="text-xs text-slate-400 py-6 text-center">Run a cycle to see targeted recommendations.</div>
+                </div>
+              </div>
+
+              <!-- Learning Progress Card with Donut Chart -->
+              <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs">
+                <h3 class="font-bold text-slate-900 text-sm mb-4">Learning Progress</h3>
+                
+                <div class="flex items-center justify-center py-2">
+                  <div class="relative w-36 h-36 flex items-center justify-center">
+                    <!-- SVG Donut Chart -->
+                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" stroke="#f1f5f9" stroke-width="10" fill="transparent" />
+                      <circle id="donut-circle" cx="50" cy="50" r="40" stroke="#10b981" stroke-width="10" fill="transparent"
+                        stroke-dasharray="251.2" stroke-dashoffset="100.48" stroke-linecap="round" class="donut-ring" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                      <span id="overall-progress-pct" class="text-2xl font-extrabold text-slate-800 tracking-tight leading-none">65%</span>
+                      <span class="text-[10px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">Overall</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Progress Legend Breakdown -->
+                <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-100 text-xs">
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50">
+                    <span class="flex items-center gap-1.5 text-slate-600 font-medium">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>Strong
+                    </span>
+                    <span id="stat-strong" class="font-bold text-slate-800">4</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50">
+                    <span class="flex items-center gap-1.5 text-slate-600 font-medium">
+                      <span class="w-2 h-2 rounded-full bg-sky-500"></span>Improving
+                    </span>
+                    <span id="stat-improving" class="font-bold text-slate-800">2</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50">
+                    <span class="flex items-center gap-1.5 text-slate-600 font-medium">
+                      <span class="w-2 h-2 rounded-full bg-amber-500"></span>Attention
+                    </span>
+                    <span id="stat-attention" class="font-bold text-slate-800">3</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50">
+                    <span class="flex items-center gap-1.5 text-slate-600 font-medium">
+                      <span class="w-2 h-2 rounded-full bg-rose-500"></span>Low
+                    </span>
+                    <span id="stat-low" class="font-bold text-slate-800">1</span>
+                  </div>
+                </div>
+
+                <p class="text-[11px] text-slate-400 mt-3 text-center">Based on continuous retention signals and assessment scores.</p>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div> <!-- End Dashboard View -->
+
+        <!-- ── TAB 2: STRENGTH REPORT VIEW ────────────────────────────────────── -->
+        <div id="view-strength" class="hidden fade-in space-y-6">
+
+          <!-- Header -->
+          <div class="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  AI Skill Intelligence
+                </span>
+                <span class="text-xs text-slate-400">Generated on Demand</span>
+              </div>
+              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Strength & Mastery Diagnostic Report</h2>
+              <p class="text-xs text-slate-500 mt-1">Holistic evaluation of technical competencies and retention trajectory.</p>
+            </div>
+            <button id="btn-reanalyze" onclick="loadStrengthReport(true)"
+              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center gap-2 disabled:opacity-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span id="btn-reanalyze-text">Re-analyze Profile</span>
+            </button>
+          </div>
+
+          <!-- AI Executive Assessment Card -->
+          <div class="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
+            <div class="absolute -right-8 -bottom-8 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl"></div>
+            <div class="flex items-center gap-2.5 mb-3">
+              <div class="w-6 h-6 rounded-lg bg-indigo-500/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Featherless AI Executive Summary</span>
+            </div>
+            <p id="strength-ai-summary" class="text-sm text-slate-200 leading-relaxed max-w-4xl">
+              Generating real-time diagnostic briefing from your skill telemetry...
+            </p>
+          </div>
+
+          <!-- Domain Mastery Grid (5 Skills) -->
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm mb-3">Core Domain Mastery</h3>
+            <div id="skills-mastery-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Detailed Sub-topic Diagnostic Matrix -->
+          <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-slate-900 text-sm">Sub-topic Retention Matrix</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Categorized breakdown with trajectory signals and diagnostic status.</p>
+              </div>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50/60 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100">
+                  <tr>
+                    <th class="py-3 px-4">Sub-topic</th>
+                    <th class="py-3 px-4">Skill Domain</th>
+                    <th class="py-3 px-3">Category</th>
+                    <th class="py-3 px-4">Mastery Score</th>
+                    <th class="py-3 px-3">Retention Trend</th>
+                    <th class="py-3 px-4">Diagnostic Assessment</th>
+                  </tr>
+                </thead>
+                <tbody id="strength-table-body" class="divide-y divide-slate-100 text-slate-700">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div> <!-- End Strength Report View -->
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ── MODAL: INTERACTIVE QUIZ ─────────────────────────────────────────────── -->
+  <div id="quiz-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden fade-in flex flex-col">
+      <!-- Quiz Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
+            📝
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm" id="quiz-modal-title">Knowledge Refresher</h3>
+            <span class="text-[11px] text-slate-400" id="quiz-modal-sub">Diagnostic Test</span>
+          </div>
+        </div>
+        <button onclick="closeQuiz()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Quiz Modal Body -->
+      <div id="quiz-content" class="p-6"></div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: RECOMMENDATION / RESOURCE DRAWER ─────────────────────────────── -->
+  <div id="rec-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden fade-in p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-sm">
+          💡
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm" id="rec-modal-title">Targeted Study Guide</h3>
+          <p class="text-[11px] text-slate-400" id="rec-modal-topic">Topic Guide</p>
+        </div>
+      </div>
+      <div id="rec-modal-body" class="bg-sky-50/60 border border-sky-100 rounded-xl p-4 text-xs text-slate-700 leading-relaxed"></div>
+      <div class="mt-5 flex justify-end">
+        <button onclick="closeRecModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition-colors">
+          Got it
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── JAVASCRIPT LOGIC ─────────────────────────────────────────────────────── -->
+  <script>
+    const API = 'http://127.0.0.1:8000';
+
+    // State
+    let skillsState = {};
+    let latestDecisions = [];
+    let latestActions = {};
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let currentQuiz = null;
+    let cachedStrengthData = null;
+
+    // Domain Icons & Pretty Names Map
+    const DOMAIN_CONFIG = {
+      'Python': { icon: '🐍', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+      'Java': { icon: '☕', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+      'DBMS': { icon: '🗄️', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+      'Machine Learning': { icon: '🧠', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
+      'DSA': { icon: '⚡', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+    };
+
+    function formatTitle(str) {
+      if (!str) return '';
+      // If contains slash (e.g. "Python / syntax_and_core_libraries")
+      if (str.includes('/')) {
+        str = str.split('/')[1].trim();
+      }
+      return str
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase())
+        .replace('Oop', 'OOP')
+        .replace('Jvm', 'JVM')
+        .replace('Sql', 'SQL')
+        .replace('Apis', 'APIs')
+        .replace('Dsa', 'DSA')
+        .replace('Dbms', 'DBMS');
+    }
+
+    // Tab Switching
+    function switchTab(tab) {
+      document.getElementById('view-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+      document.getElementById('view-strength').classList.toggle('hidden', tab !== 'strength');
+
+      const navDash = document.getElementById('nav-dashboard');
+      const navStr = document.getElementById('nav-strength');
+
+      if (tab === 'dashboard') {
+        navDash.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-150 bg-blue-50 text-blue-700 font-semibold shadow-xs";
+        navStr.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-150 text-slate-600 hover:bg-slate-100 hover:text-slate-900";
+      } else {
+        navDash.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-150 text-slate-600 hover:bg-slate-100 hover:text-slate-900";
+        navStr.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-150 bg-blue-50 text-blue-700 font-semibold shadow-xs";
+        if (cachedStrengthData) {
+          renderStrengthReport(cachedStrengthData);
+        } else {
+          loadStrengthReport(false);
+        }
+      }
+    }
+
+    // Toast Utility
+    function toast(msg, type='info') {
+      const area = document.getElementById('toast-area');
+      const div = document.createElement('div');
+      const colorMap = {
+        info: 'bg-slate-800 text-white border-slate-700',
+        success: 'bg-emerald-800 text-white border-emerald-700',
+        warn: 'bg-amber-800 text-white border-amber-700',
+        error: 'bg-rose-800 text-white border-rose-700'
+      };
+      div.className = `${colorMap[type]||colorMap.info} text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border flex items-center gap-2 fade-in pointer-events-auto max-w-sm`;
+      div.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span><span>${msg}</span>`;
+      area.appendChild(div);
+      setTimeout(() => {
+        div.style.opacity = '0';
+        div.style.transition = 'opacity 0.3s';
+        setTimeout(() => div.remove(), 300);
+      }, 3500);
+    }
+
+    // Status Badges & Helpers
+    function getStatusBadge(action) {
+      const badges = {
+        'TEST_NOW': '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Test Now</span>',
+        'RECOMMEND': '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200"><span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>Recommend</span>',
+        'WAIT': '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Wait</span>',
+        'ESCALATE': '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Escalate</span>',
+      };
+      return badges[action] || '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">On Track</span>';
+    }
+
+    function getTypeBadge(category) {
+      if (category === 'procedural') {
+        return '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Procedural</span>';
+      }
+      return '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">Conceptual</span>';
+    }
+
+    // ── Load Skills (Dashboard) ────────────────────────────────────────────────
+    async function loadSkills() {
+      try {
+        const res = await fetch(`${API}/skills`);
+        const data = await res.json();
+        skillsState = data.skills || {};
+
+        if (data.simulated_now) {
+          const date = new Date(data.simulated_now);
+          document.getElementById('clock-badge').textContent =
+            date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        renderSubtopicsTable();
+        updateSummaryKPIs();
+      } catch (err) {
+        toast('Failed to reach backend: ' + err.message, 'error');
+      }
+    }
+
+    // ── Table Rendering ────────────────────────────────────────────────────────
+    function renderSubtopicsTable() {
+      const tbody = document.getElementById('subtopic-table-body');
+      tbody.innerHTML = '';
+
+      let items = [];
+
+      for (const [skill, subtopics] of Object.entries(skillsState)) {
+        for (const [sub_topic, bundle] of Object.entries(subtopics)) {
+          const cat = bundle.category || 'procedural';
+          const decay = bundle.decay || {};
+          const decayScore = decay.decay_score || 0;
+          const escalated = bundle.escalated || false;
+
+          // Find decision for this subtopic if exists
+          let matchedDecision = latestDecisions.find(d => {
+            const st = d.subtopic.includes('/') ? d.subtopic.split('/')[1].trim() : d.subtopic.trim();
+            return st === sub_topic;
+          });
+
+          let action = matchedDecision ? matchedDecision.action : (decayScore > 0.75 ? 'TEST_NOW' : (decayScore > 0.4 ? 'RECOMMEND' : 'WAIT'));
+          if (escalated) action = 'ESCALATE';
+
+          let reason = matchedDecision ? matchedDecision.reason : (
+            decayScore > 0.75 ? 'Retention risk detected; diagnostic quiz recommended.' :
+            (decayScore > 0.4 ? 'Recommended for targeted practice review.' : 'Knowledge retention healthy; no action required.')
+          );
+
+          items.push({
+            skill,
+            sub_topic,
+            category: cat,
+            decayScore,
+            escalated,
+            action,
+            reason,
+            bundle
+          });
+        }
+      }
+
+      // Filter by active filter
+      if (activeFilter === 'attention') {
+        items = items.filter(i => i.action === 'TEST_NOW' || i.action === 'ESCALATE' || i.action === 'RECOMMEND');
+      } else if (activeFilter === 'procedural') {
+        items = items.filter(i => i.category === 'procedural');
+      } else if (activeFilter === 'conceptual') {
+        items = items.filter(i => i.category === 'conceptual');
+      }
+
+      // Filter by search
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        items = items.filter(i => i.skill.toLowerCase().includes(q) || i.sub_topic.toLowerCase().includes(q) || formatTitle(i.sub_topic).toLowerCase().includes(q));
+      }
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400">No sub-topics match your current filter.</td></tr>';
+        return;
+      }
+
+      for (const item of items) {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition-colors';
+
+        const cfg = DOMAIN_CONFIG[item.skill] || { icon: '💻', bg: 'bg-slate-100 text-slate-700 border-slate-200' };
+
+        // Determine interactive action button
+        let actionBtn = '';
+        const actionData = getActionData(item.sub_topic);
+        if (item.action === 'TEST_NOW' && actionData.quiz && actionData.quiz.length > 0) {
+          actionBtn = `
+            <button onclick="openQuiz('${item.sub_topic}', '${actionData.cycle_id}', ${JSON.stringify(actionData.quiz).replace(/"/g, '&quot;')})"
+              class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-[11px] transition-colors shadow-2xs">
+              Take Quiz
+            </button>`;
+        } else if (item.action === 'RECOMMEND' && actionData.recommendation) {
+          actionBtn = `
+            <button onclick="openRecModal('${formatTitle(item.sub_topic)}', '${encodeURIComponent(actionData.recommendation)}')"
+              class="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-lg font-semibold text-[11px] transition-colors">
+              View Guide
+            </button>`;
+        } else {
+          actionBtn = `
+            <span class="text-slate-300 font-bold text-sm">›</span>
+          `;
+        }
+
+        tr.innerHTML = `
+          <td class="py-3.5 px-4 font-semibold text-slate-800 whitespace-nowrap">
+            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border ${cfg.bg} text-[11px]">
+              <span>${cfg.icon}</span>
+              <span>${item.skill}</span>
+            </span>
+          </td>
+          <td class="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+            ${formatTitle(item.sub_topic)}
+          </td>
+          <td class="py-3.5 px-3 whitespace-nowrap">
+            ${getTypeBadge(item.category)}
+          </td>
+          <td class="py-3.5 px-3 whitespace-nowrap">
+            ${getStatusBadge(item.action)}
+          </td>
+          <td class="py-3.5 px-4 text-slate-600 max-w-xs truncate" title="${item.reason}">
+            ${item.reason}
+          </td>
+          <td class="py-3.5 px-3 text-right whitespace-nowrap">
+            ${actionBtn}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // ── Update Summary KPIs & Donut Chart ──────────────────────────────────────
+    function updateSummaryKPIs() {
+      let healthy = 0;
+      let attention = 0;
+      let recommended = 0;
+      let escalated = 0;
+
+      let strongCount = 0;
+      let improvingCount = 0;
+      let attentionCount = 0;
+      let lowCount = 0;
+
+      for (const [skill, subtopics] of Object.entries(skillsState)) {
+        for (const [sub_topic, bundle] of Object.entries(subtopics)) {
+          const decayScore = bundle.decay ? bundle.decay.decay_score : 0;
+          const isEscalated = bundle.escalated || false;
+
+          let matchedDecision = latestDecisions.find(d => {
+            const st = d.subtopic.includes('/') ? d.subtopic.split('/')[1].trim() : d.subtopic.trim();
+            return st === sub_topic;
+          });
+
+          let action = matchedDecision ? matchedDecision.action : (decayScore > 0.75 ? 'TEST_NOW' : (decayScore > 0.4 ? 'RECOMMEND' : 'WAIT'));
+          if (isEscalated) action = 'ESCALATE';
+
+          if (action === 'WAIT') healthy++;
+          if (action === 'TEST_NOW' || action === 'ESCALATE') attention++;
+          if (action === 'RECOMMEND') recommended++;
+          if (action === 'ESCALATE') escalated++;
+
+          // For donut classification
+          if (decayScore < 0.25) strongCount++;
+          else if (decayScore < 0.50) improvingCount++;
+          else if (decayScore < 0.75) attentionCount++;
+          else lowCount++;
+        }
+      }
+
+      document.getElementById('kpi-healthy').textContent = `${healthy} / 10`;
+      document.getElementById('kpi-attention').textContent = `${attention} / 10`;
+      document.getElementById('kpi-recommended').textContent = recommended.toString();
+      document.getElementById('kpi-escalated').textContent = escalated.toString();
+
+      document.getElementById('stat-strong').textContent = strongCount;
+      document.getElementById('stat-improving').textContent = improvingCount;
+      document.getElementById('stat-attention').textContent = attentionCount;
+      document.getElementById('stat-low').textContent = lowCount;
+
+      // Calculate overall progress % (100% - average decay %)
+      const totalDecaySum = Object.values(skillsState).flatMap(s => Object.values(s)).reduce((acc, b) => acc + (b.decay ? b.decay.decay_score : 0), 0);
+      const avgRetention = Math.max(10, Math.round(100 - (totalDecaySum / 10) * 60));
+      document.getElementById('overall-progress-pct').textContent = `${avgRetention}%`;
+
+      // Update SVG Donut stroke offset (Circumference = 2 * PI * 40 = ~251.2)
+      const circle = document.getElementById('donut-circle');
+      const circumference = 251.2;
+      const offset = circumference - (avgRetention / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+    }
+
+    // ── Run Cycle ─────────────────────────────────────────────────────────────
+    async function runCycle() {
+      const btn = document.getElementById('btn-run-cycle');
+      const text = document.getElementById('btn-run-cycle-text');
+      btn.disabled = true;
+      text.textContent = 'Deciding with AI...';
+      toast('Evaluating skill retention signals with Featherless AI...', 'info');
+
+      try {
+        const res = await fetch(`${API}/cycle`, { method: 'POST' });
+        const data = await res.json();
+
+        if (data.status === 'error') {
+          toast('Cycle error: ' + data.error, 'error');
+          return;
+        }
+
+        latestDecisions = data.decisions || [];
+        latestActions = data.actions || {};
+
+        renderRecentActionsFeed();
+        cachedStrengthData = null;
+        loadSkills();
+        toast(`Cycle finished: ${latestDecisions.length} sub-topics evaluated`, 'success');
+
+      } catch (err) {
+        toast('Cycle execution failed: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        text.textContent = 'Run Decision Cycle';
+      }
+    }
+
+    function getActionData(key) {
+      if (!key) return {};
+      if (latestActions[key]) return latestActions[key];
+      const cleanKey = key.includes('/') ? key.split('/')[1].trim() : key.trim();
+      if (latestActions[cleanKey]) return latestActions[cleanKey];
+      for (const [k, v] of Object.entries(latestActions)) {
+        if (k.endsWith(cleanKey) || k.includes(cleanKey)) return v;
+      }
+      return {};
+    }
+
+    // ── Render Recent Actions Feed ─────────────────────────────────────────────
+    function renderRecentActionsFeed() {
+      const container = document.getElementById('recent-actions-list');
+      container.innerHTML = '';
+
+      if (latestDecisions.length === 0) {
+        container.innerHTML = '<div class="text-xs text-slate-400 py-6 text-center">Run a cycle to see targeted recommendations.</div>';
+        return;
+      }
+
+      for (const dec of latestDecisions) {
+        const stKey = dec.subtopic.includes('/') ? dec.subtopic.split('/')[1].trim() : dec.subtopic.trim();
+        const action = dec.action;
+        const reason = dec.reason;
+        const actionData = getActionData(stKey);
+
+        const div = document.createElement('div');
+        div.className = 'p-3 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors';
+
+        let actionBtn = '';
+        if (action === 'TEST_NOW' && actionData.quiz && actionData.quiz.length > 0) {
+          actionBtn = `
+            <button onclick="openQuiz('${stKey}', '${actionData.cycle_id}', ${JSON.stringify(actionData.quiz).replace(/"/g, '&quot;')})"
+              class="mt-2 text-xs font-bold text-emerald-700 bg-emerald-100/80 hover:bg-emerald-200 px-3 py-1 rounded-lg transition-colors inline-flex items-center gap-1">
+              📝 Take Quiz (${actionData.quiz.length} Questions)
+            </button>`;
+        } else if (action === 'RECOMMEND' && actionData.recommendation) {
+          actionBtn = `
+            <button onclick="openRecModal('${formatTitle(stKey)}', '${encodeURIComponent(actionData.recommendation)}')"
+              class="mt-2 text-xs font-bold text-sky-700 bg-sky-100/80 hover:bg-sky-200 px-3 py-1 rounded-lg transition-colors inline-flex items-center gap-1">
+              💡 View Study Resource
+            </button>`;
+        }
+
+        div.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="font-bold text-slate-900 text-xs">${formatTitle(stKey)}</span>
+              <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">${reason}</p>
+              ${actionBtn}
+            </div>
+            ${getStatusBadge(action)}
+          </div>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    // ── Advance Time ──────────────────────────────────────────────────────────
+    async function advanceTime(customDays = null) {
+      const input = document.getElementById('advance-days');
+      const days = customDays !== null ? customDays : parseFloat(input.value);
+      if (!days || days <= 0) {
+        toast('Enter a valid number of days', 'warn');
+        return;
+      }
+      if (customDays !== null && input) {
+        input.value = customDays;
+      }
+
+      const btn = document.getElementById('btn-advance-time');
+      const btnText = document.getElementById('btn-advance-text');
+      const icon = document.getElementById('btn-advance-icon');
+
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.textContent = 'Advancing...';
+      if (icon) icon.classList.add('animate-spin');
+
+      try {
+        const res = await fetch(`${API}/advance_time`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ days })
+        });
+        const data = await res.json();
+        const dateStr = new Date(data.new_simulated_now).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('clock-badge').textContent = dateStr;
+        toast(`✨ Leaped forward +${days} days to ${dateStr}! Decay scores recalculated.`, 'success');
+        cachedStrengthData = null;
+        loadSkills();
+      } catch (err) {
+        toast('Advance time error: ' + err.message, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = 'Advance';
+        if (icon) icon.classList.remove('animate-spin');
+      }
+    }
+
+    // ── Filter & Search Handlers ──────────────────────────────────────────────
+    function filterSubtopics(filter) {
+      activeFilter = filter;
+      ['all', 'attention', 'procedural', 'conceptual'].forEach(f => {
+        const btn = document.getElementById(`filter-${f}`);
+        if (f === filter) {
+          btn.className = "px-3 py-1 rounded-lg font-semibold bg-white border border-slate-300 text-slate-800 shadow-2xs";
+        } else {
+          btn.className = "px-3 py-1 rounded-lg font-medium text-slate-600 hover:bg-white hover:text-slate-800 transition-colors";
+        }
+      });
+      renderSubtopicsTable();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val;
+      renderSubtopicsTable();
+    }
+
+    // ── Interactive Quiz Modal ────────────────────────────────────────────────
+    function openQuiz(subtopic, cycleId, questions) {
+      if (!questions || questions.length === 0) {
+        toast('No questions currently queued for this topic', 'warn');
+        return;
+      }
+      currentQuiz = { subtopic, cycle_id: cycleId, questions, questionIdx: 0 };
+      document.getElementById('quiz-modal-title').textContent = formatTitle(subtopic);
+      document.getElementById('quiz-modal').classList.remove('hidden');
+      renderQuizQuestion();
+    }
+
+    function closeQuiz() {
+      document.getElementById('quiz-modal').classList.add('hidden');
+      currentQuiz = null;
+    }
+
+    function renderQuizQuestion() {
+      const q = currentQuiz;
+      const question = q.questions[q.questionIdx];
+      const content = document.getElementById('quiz-content');
+
+      document.getElementById('quiz-modal-sub').textContent = `Question ${q.questionIdx + 1} of ${q.questions.length}`;
+
+      content.innerHTML = `
+        <div class="mb-4">
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mb-3 overflow-hidden">
+            <div class="bg-indigo-600 h-full rounded-full transition-all" style="width: ${((q.questionIdx + 1) / q.questions.length) * 100}%"></div>
+          </div>
+          <p class="text-slate-900 font-bold text-sm leading-relaxed">${question.question}</p>
+        </div>
+
+        <div id="quiz-options-list" class="space-y-2.5">
+          ${question.options.map((opt, i) => `
+            <button id="opt-btn-${i}" onclick="submitQuizAnswer(${i}, '${question.question_id}', ${JSON.stringify(opt).replace(/"/g, '&quot;')})"
+              class="w-full text-left bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-400 text-slate-800 text-xs font-medium px-4 py-3 rounded-xl transition-all flex items-start gap-2.5 group">
+              <span class="w-5 h-5 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold flex items-center justify-center shrink-0 text-[11px] group-hover:border-indigo-300">
+                ${String.fromCharCode(65 + i)}
+              </span>
+              <span class="mt-0.5 leading-relaxed">${opt}</span>
+            </button>
+          `).join('')}
+        </div>
+
+        <div id="quiz-grading-result" class="mt-4 hidden"></div>
+      `;
+    }
+
+    async function submitQuizAnswer(optIdx, questionId, selectedOption) {
+      if (!currentQuiz) return;
+
+      // Lock buttons
+      document.querySelectorAll('[id^=opt-btn-]').forEach(b => b.disabled = true);
+
+      const resultBox = document.getElementById('quiz-grading-result');
+      resultBox.classList.remove('hidden');
+      resultBox.innerHTML = `
+        <div class="flex items-center gap-2 text-xs text-slate-500 py-2">
+          <div class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <span>Grading response with AI...</span>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(`${API}/answer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subtopic: currentQuiz.subtopic,
+            question_id: questionId,
+            selected_option: selectedOption,
+            cycle_id: currentQuiz.cycle_id,
+          })
+        });
+
+        const data = await res.json();
+        const gradeResult = data.grade_result || {};
+        const correct = gradeResult.correct;
+        const explanation = gradeResult.explanation || 'Answer recorded successfully.';
+
+        resultBox.innerHTML = `
+          <div class="p-4 rounded-xl text-xs ${correct ? 'bg-emerald-50 border border-emerald-200 text-emerald-900' : 'bg-rose-50 border border-rose-200 text-rose-900'}">
+            <div class="font-bold flex items-center gap-1.5 mb-1 text-sm">
+              <span>${correct ? '✅ Outstanding!' : '❌ Needs Review'}</span>
+            </div>
+            <p class="leading-relaxed">${explanation}</p>
+          </div>
+          <div class="mt-4 flex justify-end">
+            ${currentQuiz.questionIdx < currentQuiz.questions.length - 1
+              ? `<button onclick="nextQuizQuestion()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs">
+                  Next Question →
+                 </button>`
+              : `<button onclick="closeQuiz()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs">
+                  Finish & Review Results ✓
+                 </button>`
+            }
+          </div>
+        `;
+
+        cachedStrengthData = null;
+        loadSkills();
+
+      } catch (err) {
+        resultBox.innerHTML = `<div class="text-xs text-rose-600 p-2">Grading error: ${err.message}</div>`;
+      }
+    }
+
+    function nextQuizQuestion() {
+      if (!currentQuiz) return;
+      currentQuiz.questionIdx++;
+      renderQuizQuestion();
+    }
+
+    // ── Recommendation Modal ─────────────────────────────────────────────────
+    function openRecModal(topicTitle, recEncoded) {
+      document.getElementById('rec-modal-topic').textContent = topicTitle;
+      document.getElementById('rec-modal-body').textContent = decodeURIComponent(recEncoded);
+      document.getElementById('rec-modal').classList.remove('hidden');
+    }
+
+    function closeRecModal() {
+      document.getElementById('rec-modal').classList.add('hidden');
+    }
+
+    function openActionModal() {
+      toast('Click any "Take Quiz" or "View Guide" button to access learning resources directly.', 'info');
+    }
+
+    // ── Strength Report Rendering & Cached Loading ────────────────────────────
+    function renderStrengthReport(data) {
+      const summaryElem = document.getElementById('strength-ai-summary');
+      const cardsElem = document.getElementById('skills-mastery-cards');
+      const tbody = document.getElementById('strength-table-body');
+      const stats = data.stats || {};
+      const aiSummary = data.ai_summary || 'Your diagnostic profile indicates balanced fundamental retention with active growth across procedural workflows.';
+
+      // AI Summary
+      summaryElem.textContent = aiSummary;
+
+      // Core Domain Mastery Cards (5 skills)
+      cardsElem.innerHTML = '';
+      for (const [skill, sdata] of Object.entries(stats.skills || {})) {
+        const pct = sdata.mastery_pct || 0;
+        const cfg = DOMAIN_CONFIG[skill] || { icon: '💻' };
+        const card = document.createElement('div');
+        card.className = 'bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs text-center';
+        card.innerHTML = `
+          <div class="text-lg mb-1">${cfg.icon}</div>
+          <div class="text-xs font-bold text-slate-800">${skill}</div>
+          <div class="text-2xl font-extrabold text-indigo-600 mt-1">${pct}%</div>
+          <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mt-0.5">Mastery</p>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
+            <div class="bg-indigo-600 h-full rounded-full" style="width: ${pct}%"></div>
+          </div>
+        `;
+        cardsElem.appendChild(card);
+      }
+
+      // Subtopic Diagnostic Matrix Table
+      tbody.innerHTML = '';
+      for (const [st, sdata] of Object.entries(stats.sub_topics || {})) {
+        const pct = sdata.mastery_pct || 0;
+        const trend = sdata.trend || 'stable';
+        const trendIcon = { improving: '↑', declining: '↓', stable: '→', insufficient_data: '•' }[trend] || '→';
+        const trendColor = { improving: 'text-emerald-600 bg-emerald-50', declining: 'text-rose-600 bg-rose-50', stable: 'text-slate-600 bg-slate-50', insufficient_data: 'text-slate-400 bg-slate-50' }[trend] || 'text-slate-600 bg-slate-50';
+
+        const assessmentText = pct >= 75 ? 'Knowledge solid; maintain periodic review' : (pct >= 50 ? 'Moderate mastery; practice suggested' : 'Decay threshold reached; quiz review required');
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition-colors';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-slate-900">${formatTitle(st)}</td>
+          <td class="py-3 px-4 font-medium text-slate-600">${sdata.skill || ''}</td>
+          <td class="py-3 px-3">
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600">Standard</span>
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex items-center gap-2">
+              <div class="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-indigo-600 h-full rounded-full" style="width: ${pct}%"></div>
+              </div>
+              <span class="font-bold text-slate-800 font-mono text-[11px]">${pct}%</span>
+            </div>
+          </td>
+          <td class="py-3 px-3">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${trendColor}">
+              <span>${trendIcon}</span>
+              <span class="capitalize">${trend.replace('_', ' ')}</span>
+            </span>
+          </td>
+          <td class="py-3 px-4 text-slate-500 text-[11px]">
+            ${assessmentText}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function loadStrengthReport(force = false) {
+      if (!force && cachedStrengthData) {
+        renderStrengthReport(cachedStrengthData);
+        return;
+      }
+
+      const btn = document.getElementById('btn-reanalyze');
+      const btnText = document.getElementById('btn-reanalyze-text');
+      const summaryElem = document.getElementById('strength-ai-summary');
+      const cardsElem = document.getElementById('skills-mastery-cards');
+      const tbody = document.getElementById('strength-table-body');
+
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.textContent = force ? 'Synthesizing AI...' : 'Loading Metrics...';
+
+      if (!cachedStrengthData) {
+        summaryElem.innerHTML = '<span class="animate-pulse">Synthesizing holistic skill assessment with Featherless AI...</span>';
+        cardsElem.innerHTML = '<div class="col-span-full text-center py-6 text-xs text-slate-400">Loading domain metrics...</div>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">Compiling diagnostic matrix...</td></tr>';
+      }
+
+      try {
+        const url = force ? `${API}/strength-report?force=true` : `${API}/strength-report`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        cachedStrengthData = data;
+        renderStrengthReport(data);
+        if (force) toast('AI Strength Report updated with fresh analysis', 'success');
+      } catch (err) {
+        toast('Failed to load strength report: ' + err.message, 'error');
+        if (!cachedStrengthData) {
+          summaryElem.textContent = 'Diagnostic briefing temporarily unavailable. Please retry.';
+        }
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = 'Re-analyze Profile';
+      }
+    }
+
+    // ── Initial Bootstrap ─────────────────────────────────────────────────────
+    loadSkills();
+  </script>
+</body>
+>>>>>>> 87b73f4 (feat: complete Skill Decay Alerts dashboard, quiz integration, strength report tab, and backend SDA Signal Engine)
 </html>

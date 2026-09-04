@@ -1,28 +1,5 @@
 ﻿import React from "react";
 
-function decayColor(score) {
-  if (score >= 0.7) return "#ef4444";
-  if (score >= 0.45) return "#f59e0b";
-  return "#10b981";
-}
-
-function trackingBadge(mode) {
-  if (mode === "bkt") return <span className="badge badge-bkt">BKT</span>;
-  if (mode === "decay_fallback") return <span className="badge badge-decay">Decay</span>;
-  return <span className="badge badge-cold">Cold Start</span>;
-}
-
-function actionBadge(action) {
-  if (!action) return null;
-  const cls = {
-    TEST_NOW: "badge-test",
-    RECOMMEND: "badge-recommend",
-    ESCALATE: "badge-escalate",
-    WAIT: "badge-wait",
-  }[action] || "badge-wait";
-  return <span className={`badge ${cls}`}>{action}</span>;
-}
-
 export default function SkillCard({ skill, subTopic, entry }) {
   const decay = entry?.decay?.decay_score ?? 0;
   const days = entry?.decay?.days_since_last_use ?? 0;
@@ -31,63 +8,73 @@ export default function SkillCard({ skill, subTopic, entry }) {
   const acc = entry?.quiz?.recent_accuracy;
   const obs = entry?.knowledge_tracking?.observation_count ?? 0;
   const lastAction = entry?.last_decision_action;
-  const cat = entry?.category ?? "conceptual";
   const escalated = entry?.escalated;
-  const color = decayColor(decay);
 
   const displayName = subTopic.replace(/_/g, " ");
 
+  // Determine status color based on decay
+  let statusColor = "bg-green";
+  let statusText = "Stable";
+  if (escalated || decay >= 0.7) {
+    statusColor = "bg-red";
+    statusText = escalated ? "Escalated" : "At Risk";
+  } else if (decay >= 0.45) {
+    statusColor = "bg-amber";
+    statusText = "Needs Attention";
+  }
+
   return (
-    <div className={`skill-card fade-in${escalated ? " escalated" : ""}`}
-      style={escalated ? { borderColor: "rgba(239,68,68,0.4)" } : {}}>
+    <div className="skill-card">
       <div className="skill-header">
         <div>
           <div className="skill-name">{displayName}</div>
-          <div className="skill-sub">{skill}</div>
+          <div className="skill-topic">{skill}</div>
         </div>
-        <span className={`badge badge-${cat}`}>{cat}</span>
+        <div className="status-indicator">
+          <span className={`status-dot ${statusColor}`}></span>
+          <span className={`color-${statusColor.replace('bg-', '')}`}>{statusText}</span>
+        </div>
       </div>
 
-      <div className="decay-bar-wrap">
-        <div className="decay-label">
-          <span>Decay</span>
-          <span style={{ color }}>{(decay * 100).toFixed(1)}%</span>
+      <div className="metrics-row">
+        <div className="metric">
+          <div className="metric-label">Estimated Knowledge</div>
+          <div className="metric-value">
+            {kp !== null && kp !== undefined ? `${(kp * 100).toFixed(0)}%` : "N/A"}
+          </div>
         </div>
-        <div className="decay-bar-track">
+        <div className="metric">
+          <div className="metric-label">Last Used</div>
+          <div className="metric-value">
+            {days > 0 ? `${days.toFixed(0)} days ago` : "Today"}
+          </div>
+        </div>
+        <div className="metric">
+          <div className="metric-label">Recent Accuracy</div>
+          <div className="metric-value">
+            {acc !== null && acc !== undefined ? `${(acc * 100).toFixed(0)}%` : "N/A"}
+          </div>
+        </div>
+      </div>
+
+      <div className="progress-container">
+        <div className="progress-labels">
+          <span>Decay</span>
+          <span>{(decay * 100).toFixed(1)}%</span>
+        </div>
+        <div className="progress-track">
           <div
-            className="decay-bar-fill"
-            style={{ width: `${decay * 100}%`, background: color }}
+            className={`progress-fill ${statusColor}`}
+            style={{ width: `${decay * 100}%` }}
           />
         </div>
       </div>
 
-      <div className="signal-row">
-        <div className="signal-item">
-          <div className="signal-label">Days ago</div>
-          <div className="signal-value" style={{ color: days > 30 ? "#ef4444" : "#f1f5f9" }}>{days.toFixed(0)}</div>
-        </div>
-        {kp !== null && kp !== undefined ? (
-          <div className="signal-item">
-            <div className="signal-label">P(Know)</div>
-            <div className="signal-value" style={{ color: kp > 0.6 ? "#10b981" : "#f59e0b" }}>{(kp * 100).toFixed(0)}%</div>
-          </div>
-        ) : null}
-        {acc !== null && acc !== undefined ? (
-          <div className="signal-item">
-            <div className="signal-label">Accuracy</div>
-            <div className="signal-value">{(acc * 100).toFixed(0)}%</div>
-          </div>
-        ) : null}
-        <div className="signal-item">
-          <div className="signal-label">Obs.</div>
-          <div className="signal-value">{obs}</div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.875rem", flexWrap: "wrap", alignItems: "center" }}>
-        {trackingBadge(mode)}
-        {escalated && <span className="badge badge-escalate">⚠ Escalated</span>}
-        {lastAction && actionBadge(lastAction)}
+      <div className="mt-4 flex-row">
+        {mode === "bkt" && <span className="badge-outline">BKT Model</span>}
+        {mode === "decay_fallback" && <span className="badge-outline">Decay Proxy</span>}
+        {mode === "cold_start" && <span className="badge-outline">Cold Start</span>}
+        {obs > 0 && <span className="badge-outline">{obs} observations</span>}
       </div>
     </div>
   );
