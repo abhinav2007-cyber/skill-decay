@@ -40,5 +40,7 @@ export const api = {
     apiFetch("/skills/baseline/generate", { method: "POST", body: JSON.stringify(body) }),
   deleteSkill: (skillName) =>
     apiFetch(`/skills/${encodeURIComponent(skillName)}`, { method: "DELETE" }),
+  // ── LinkedIn Integration ────────────────────────────────────────────────────
+  importLinkedInProfile: (url) =>
+    apiFetch("/linkedin/import", { method: "POST", body: JSON.stringify({ url }) }),
 };
-

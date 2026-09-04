@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import AddSkillModal from "./AddSkillModal";
+import { api } from "../api/client";
 
 // ── Default meta for built-in skills ─────────────────────────────────────────
 const SKILL_META = {
@@ -91,6 +92,13 @@ const CORE_SKILL_NAMES = ["Python", "Java", "DBMS", "Machine Learning", "DSA"];
 export default function HomeDashboard({ skillsData, onTestNowClick, onStartBaselineTest, loading, onRefresh, navigate }) {
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // LinkedIn Import State
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importToast, setImportToast] = useState("");
+  const [importedProfile, setImportedProfile] = useState(null);
+  const [agentReasoning, setAgentReasoning] = useState(null);
+
   // Build live summaries from API data
   const liveSummaries = buildSkillSummaries(skillsData);
 
@@ -113,6 +121,59 @@ export default function HomeDashboard({ skillsData, onTestNowClick, onStartBasel
     if (onRefresh) onRefresh();
   };
 
+  const handleImportLinkedIn = async () => {
+    if (!linkedinUrl.trim()) return;
+    setIsImporting(true);
+    setImportToast("");
+    try {
+      const res = await api.importLinkedInProfile(linkedinUrl);
+      setImportedProfile(res.profile);
+      setAgentReasoning(res.agent_decision);
+      setImportToast(`Profile successfully linked for ${res.profile.name}`);
+      if (onRefresh) onRefresh();
+      // Clear toast after 4s
+      setTimeout(() => setImportToast(""), 4000);
+      setLinkedinUrl("");
+    } catch (e) {
+      setImportToast("Failed to import LinkedIn profile.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const [generatingCuratedTest, setGeneratingCuratedTest] = useState(false);
+
+  const handleGenerateCuratedTest = async () => {
+    if (!importedProfile || !agentReasoning || !onStartBaselineTest) return;
+    setGeneratingCuratedTest(true);
+    try {
+      const flaggedName = agentReasoning.flagged_skill;
+      const matchingSkill = importedProfile.skills.find(s => s.name === flaggedName);
+      
+      const subTopicsPayload = matchingSkill ? [
+        {
+          key: matchingSkill.name.toLowerCase().replace(/ /g, "_").replace(/&/g, "and").replace(/\./g, "_"),
+          label: matchingSkill.name,
+          category: matchingSkill.category
+        }
+      ] : [
+        { key: flaggedName.toLowerCase().replace(/ /g, "_"), label: flaggedName, category: "procedural" }
+      ];
+
+      const res = await api.generateBaseline({
+        skill: "LinkedIn Profile", 
+        sub_topics: subTopicsPayload
+      });
+      
+      onStartBaselineTest("LinkedIn Profile", res.cycle_id, res.questions);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate curated test for the flagged skill.");
+    } finally {
+      setGeneratingCuratedTest(false);
+    }
+  };
+
   return (
     <div className="dashboard-view">
       <div className="dash-header-row">
@@ -127,6 +188,62 @@ export default function HomeDashboard({ skillsData, onTestNowClick, onStartBasel
             <span className="status-text">On Track</span>
           </div>
         </div>
+      </div>
+
+      {/* ── LinkedIn Import UI ── */}
+      <div className="section-block" style={{ marginBottom: "2rem" }}>
+        <h3 className="rec-section-title" style={{ marginBottom: "0.5rem" }}>LinkedIn Profile Import</h3>
+        <p className="rec-section-sub" style={{ marginBottom: "1rem" }}>Paste your LinkedIn profile URL to automatically import your skills and certifications.</p>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder="Paste LinkedIn Profile URL"
+            value={linkedinUrl}
+            onChange={(e) => setLinkedinUrl(e.target.value)}
+            style={{ flex: 1, padding: "10px 14px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px" }}
+          />
+          <button
+            className="btn-add-skill"
+            onClick={handleImportLinkedIn}
+            disabled={isImporting || !linkedinUrl.trim()}
+            style={{ height: "42px", padding: "0 20px" }}
+          >
+            {isImporting ? "Importing..." : "Import Profile"}
+          </button>
+        </div>
+        {importToast && (
+          <div style={{ marginTop: "1rem", padding: "10px", borderRadius: "6px", backgroundColor: importToast.includes("success") ? "#dcfce7" : "#fee2e2", color: importToast.includes("success") ? "#166534" : "#991b1b", fontSize: "14px", fontWeight: "500", display: "inline-block" }}>
+            ✅ {importToast}
+          </div>
+        )}
+
+        {importedProfile && (
+          <div style={{ marginTop: "1.5rem", padding: "1.5rem", border: "1px solid #e5e7eb", borderRadius: "12px", backgroundColor: "#f9fafb" }}>
+            <h4 style={{ margin: "0 0 4px 0", fontSize: "18px", color: "#111827" }}>{importedProfile.name}</h4>
+            <p style={{ margin: "0 0 12px 0", fontSize: "14px", color: "#4b5563" }}>{importedProfile.headline}</p>
+            <p style={{ margin: "0 0 16px 0", fontSize: "13px", color: "#6b7280", lineHeight: "1.5" }}>{importedProfile.summary}</p>
+            
+            <div style={{ marginBottom: "12px" }}>
+              <strong style={{ fontSize: "13px", color: "#374151" }}>Certifications:</strong>
+              <ul style={{ margin: "4px 0 0 0", paddingLeft: "20px", fontSize: "13px", color: "#4b5563" }}>
+                {importedProfile.certifications.map((c, i) => (
+                  <li key={i}>{c.title} ({c.issuer})</li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <strong style={{ fontSize: "13px", color: "#374151" }}>Imported Skills:</strong>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "6px" }}>
+                {importedProfile.skills.map((s, i) => (
+                  <span key={i} style={{ padding: "4px 10px", borderRadius: "16px", backgroundColor: "#e0e7ff", color: "#3730a3", fontSize: "12px", fontWeight: "500" }}>
+                    {s.name} (Decay: {s.decay_score})
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Skill Mastery Strip ── */}
@@ -203,6 +320,32 @@ export default function HomeDashboard({ skillsData, onTestNowClick, onStartBasel
 
       {/* ── Recommended Tests ── */}
       <div className="section-block" style={{ marginTop: "2.5rem" }}>
+        {agentReasoning && (
+          <div style={{ marginBottom: "2rem", padding: "1.5rem", borderRadius: "12px", background: "linear-gradient(to right, #fef3c7, #fffbeb)", border: "1px solid #fde68a" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "20px" }}>🤖</span>
+              <h3 style={{ margin: 0, fontSize: "16px", color: "#92400e" }}>Agent Reasoning</h3>
+            </div>
+            <p style={{ margin: "0 0 12px 0", fontSize: "14px", color: "#b45309", lineHeight: "1.5" }}>
+              {agentReasoning.reasoning}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 12px", borderRadius: "6px", backgroundColor: "#fef08a", color: "#854d0e", fontWeight: "600", fontSize: "13px" }}>
+                <span>Flagged for Test:</span>
+                <span style={{ textDecoration: "underline" }}>{agentReasoning.flagged_skill}</span>
+              </div>
+              <button
+                className="btn-add-skill"
+                onClick={handleGenerateCuratedTest}
+                disabled={generatingCuratedTest}
+                style={{ height: "36px", padding: "0 16px", backgroundColor: "#d97706", fontSize: "13px" }}
+              >
+                {generatingCuratedTest ? "Generating AI Quiz..." : `Take Curated Quiz for ${agentReasoning.flagged_skill}`}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="recommended-header">
           <div>
             <h3 className="rec-section-title">Recommended Tests</h3>

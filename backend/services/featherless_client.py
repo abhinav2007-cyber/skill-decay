@@ -1,14 +1,14 @@
 """
-featherless_client.py — Key-rotation utility for all three Featherless.ai call sites.
+featherless_client.py — Key-rotation utility for Featherless.ai call sites.
 
 Shared utility: Decision Agent (call #1), Agent Action Layer (call #2),
 and Strength Report AI summary (call #3) ALL route through this.
 
 Key rotation behavior (§8.1):
-  - Tries FEATHERLESS_KEY_1, then FEATHERLESS_KEY_2, then FEATHERLESS_KEY_3
-  - On 401 (auth failure) or 429 (rate limit): rotates to next key, retries once per key
+  - Tries FEATHERLESS_KEY_1 -> FEATHERLESS_KEY_2 -> FEATHERLESS_KEY_3 -> FEATHERLESS_KEY_4 -> FEATHERLESS_KEY_5
+  - On 401 (auth failure) or 429 (rate limit) or timeout: rotates to next key in sequence
   - Hard timeout: 20 seconds per attempt (§8.1)
-  - After all 3 keys fail: raises FeatherlessAllKeysFailedError — caller handles gracefully
+  - After all configured keys fail: raises FeatherlessAllKeysFailedError — caller handles gracefully
 
 NEVER logs the actual API key values.
 """
@@ -39,8 +39,9 @@ ROTATION_TRIGGER_STATUSES = {401, 429}
 
 
 class FeatherlessAllKeysFailedError(Exception):
-    """Raised when all 3 Featherless keys have been exhausted for a single call."""
+    """Raised when all configured Featherless keys have been exhausted for a single call."""
     pass
+
 
 
 def _get_keys() -> list[str]:
@@ -49,11 +50,13 @@ def _get_keys() -> list[str]:
         os.getenv("FEATHERLESS_KEY_1", ""),
         os.getenv("FEATHERLESS_KEY_2", ""),
         os.getenv("FEATHERLESS_KEY_3", ""),
+        os.getenv("FEATHERLESS_KEY_4", ""),
+        os.getenv("FEATHERLESS_KEY_5", ""),
     ]
     valid = [k for k in keys if k.strip()]
     if not valid:
         raise FeatherlessAllKeysFailedError(
-            "No Featherless API keys configured. Set FEATHERLESS_KEY_1/2/3 in .env"
+            "No Featherless API keys configured. Set FEATHERLESS_KEY_1 to 5 in .env"
         )
     return valid
 

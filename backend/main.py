@@ -695,6 +695,141 @@ def post_add_skill(request: AddSkillRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+class LinkedInImportRequest(BaseModel):
+    url: str
+
+@app.post("/linkedin/import")
+def post_linkedin_import(request: LinkedInImportRequest, db: Session = Depends(get_db)):
+    """
+    POST /linkedin/import — LinkedIn profile integration.
+    Matches hardcoded URL, sets up initial profile data & days_dormant in database,
+    calculates decay via Signal Engine, and queries Decision Agent to flag 1 high-decay skill.
+    """
+    from backend.domain import LINKEDIN_TARGET_URL, LINKEDIN_AISHWARYA_PROFILE
+    from backend.database import Skill, SkillSubTopic, SubTopicState
+    from backend.services.featherless_client import chat_complete
+    import json
+    from datetime import timedelta
+
+    url = (request.url or "").strip()
+    if url != LINKEDIN_TARGET_URL:
+        # Fallback to the target URL's data even if arbitrary string provided for demo purposes, 
+        # but in strict matching we could raise 400. We'll proceed with demo data anyway per requirements.
+        logger.warning(f"URL did not strictly match, but proceeding with demo profile: {url}")
+
+    now = get_simulated_now(db)
+    profile_data = LINKEDIN_AISHWARYA_PROFILE["profile"]
+    skill_group = "LinkedIn Profile"
+
+    # Ensure "LinkedIn Profile" is in the Skill table
+    existing_skill = db.query(Skill).filter_by(user_id=DEMO_USER_ID, skill_name=skill_group).first()
+    if not existing_skill:
+        db.add(Skill(user_id=DEMO_USER_ID, skill_name=skill_group, created_at=now, confirmed=True))
+
+    calculated_skills = []
+
+    for s in profile_data["skills"]:
+        name = s["name"]
+        key = name.lower().replace(" ", "_").replace("&", "and").replace(".", "_")
+        category = s["category"]
+        days_dormant = s["days_dormant"]
+
+        existing_st = db.query(SubTopicState).filter_by(
+            user_id=DEMO_USER_ID, skill=skill_group, sub_topic=key
+        ).first()
+
+        if not existing_st:
+            db.add(SkillSubTopic(
+                user_id=DEMO_USER_ID,
+                skill_name=skill_group,
+                sub_topic_key=key,
+                label=name,
+                category=category,
+                created_at=now
+            ))
+            
+            # Retroactive last_used_at
+            last_used = now - timedelta(days=days_dormant)
+
+            db.add(SubTopicState(
+                user_id=DEMO_USER_ID,
+                skill=skill_group,
+                sub_topic=key,
+                category=category,
+                last_used_at=last_used,
+                tracking_mode="cold_start",
+                knowledge_probability=None,
+                observation_count=0,
+                decay_score=0.0,
+                recent_accuracy=None,
+                last_decision_action=None,
+                last_decision_reason=None,
+                escalated=False,
+                updated_at=now,
+            ))
+            db.flush()
+
+        # Recalculate to generate decay_score immediately
+        updated_state = recalculate_and_persist_state(db, DEMO_USER_ID, skill_group, key, category)
+        
+        calculated_skills.append({
+            "name": name,
+            "category": category,
+            "days_dormant": days_dormant,
+            "decay_score": updated_state.decay_score
+        })
+
+    db.commit()
+
+    # Create Agent Prompt
+    prompt_text = (
+        "You are an AI learning assistant evaluating a user's LinkedIn profile to find a skill they might be forgetting.\n"
+        "Here are the imported skills, their categories, days dormant, and calculated decay_scores (0 = fresh, 1 = fully decayed):\n"
+        + json.dumps(calculated_skills, indent=2) + "\n\n"
+        "Your task is to select EXACTLY ONE skill that has highly decayed (highest decay_score and days_dormant). "
+        "Usually 'Dell PowerFlex Rack' or 'Cloud Storage' are good candidates if present.\n"
+        "Crucially, your `reasoning` MUST be written directly to the user in a friendly, encouraging, and simple way. "
+        "DO NOT mention technical terms like 'decay_score', 'procedural category', or '0.9987'. "
+        "Example of a good reasoning: 'It looks like you haven't used Dell PowerFlex Rack in about 4 months! Let's take a quick 5-minute refresher quiz to make sure your skills are still sharp.'\n"
+        "Return your response ONLY as a JSON object with this exact structure:\n"
+        '{"flagged_skill": "skill name", "reasoning": "Friendly 1-2 sentences explaining why they should take the quiz."}'
+    )
+
+    try:
+        raw = chat_complete(
+            messages=[{"role": "user", "content": prompt_text}],
+            temperature=0.2,
+            max_tokens=500,
+            call_site="linkedin_import"
+        )
+        # Parse JSON
+        text = raw.strip()
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            text = text[start:end+1]
+        
+        agent_decision = json.loads(text)
+    except Exception as exc:
+        logger.error("Failed to parse Decision Agent response for LinkedIn import: %s", exc)
+        agent_decision = {
+            "flagged_skill": "Dell PowerFlex Rack",
+            "reasoning": "Fallback decision: Skill is procedural and has been dormant for 120 days, resulting in significant decay."
+        }
+
+    return {
+        "status": "ok",
+        "profile": {
+            "name": profile_data["name"],
+            "headline": profile_data["headline"],
+            "summary": profile_data["summary"],
+            "certifications": profile_data["certifications"],
+            "skills": calculated_skills
+        },
+        "agent_decision": agent_decision
+    }
+
+
 @app.delete("/skills/{skill_name}")
 def delete_skill_endpoint(skill_name: str, db: Session = Depends(get_db)):
     """

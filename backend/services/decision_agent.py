@@ -71,18 +71,17 @@ ACTIONS available per sub-topic:
 - ESCALATE: critical decay/low mastery that has been ignored; flag for priority attention
 
 CRITICAL CONSTRAINT: You may select at most {MAX_TEST_NOW_PER_CYCLE} sub-topics for TEST_NOW per cycle.
-If you identify more than {MAX_TEST_NOW_PER_CYCLE} candidates for TEST_NOW, select the {MAX_TEST_NOW_PER_CYCLE} most urgent and assign WAIT or RECOMMEND to the rest.
-State your ranking reasoning explicitly.
+If you identify more than {MAX_TEST_NOW_PER_CYCLE} candidates for TEST_NOW, select the {MAX_TEST_NOW_PER_CYCLE} most urgent and assign RECOMMEND or ESCALATE to the next most urgent.
 
 ESCALATED sub-topics (marked ***) were flagged in a prior cycle and received no improvement. Weight them as higher priority unless their signals clearly show recent improvement.
 
-OUTPUT FORMAT: Respond ONLY with a valid JSON array (no markdown, no commentary) like:
+OUTPUT FORMAT: Respond ONLY with a valid JSON array (no markdown, no commentary) containing AT MOST 5 elements, representing only the most urgent sub-topics that require an action (TEST_NOW, RECOMMEND, or ESCALATE). Any sub-topic you omit will automatically default to WAIT.
 [
   {{"subtopic": "syntax_and_core_libraries", "action": "TEST_NOW", "reason": "high decay (0.87) and no recent usage in 3 days; most urgent of all sub-topics"}},
   ...
 ]
 
-Each element must have exactly: "subtopic" (string), "action" (one of TEST_NOW/WAIT/RECOMMEND/ESCALATE), "reason" (plain English, 1-2 sentences explaining the decision in context of the whole bundle).
+Each element must have exactly: "subtopic" (string), "action" (one of TEST_NOW/RECOMMEND/ESCALATE/WAIT), "reason" (plain English, 1-2 sentences explaining the decision).
 """
 
     user_prompt = f"""Here is the full 10-sub-topic signal bundle for this learner:
@@ -218,8 +217,20 @@ def run_decision_agent(
             for skill_data in signal_bundle.values()
             for st in skill_data
         ]
+    else:
+        # Add default WAIT for any omitted sub-topics
+        decided_subtopics = {d["subtopic"] for d in decisions}
+        for skill_data in signal_bundle.values():
+            for st in skill_data:
+                if st not in decided_subtopics:
+                    decisions.append({
+                        "subtopic": st,
+                        "action": "WAIT",
+                        "reason": "Defaulted to WAIT by agent omission"
+                    })
 
     # §7.1 cap enforcement (secondary guard — model was already instructed)
     decisions = _apply_test_now_cap(decisions)
 
     return decisions
+

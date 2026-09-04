@@ -30,20 +30,10 @@ export default function ActiveTest({ subject, subtopic, questions, onSubmitTest,
   const totalQ = questions.length;
   const isLast = currentIndex === totalQ - 1;
 
-  const extractLetter = (opt) => {
-    if (!opt) return "";
-    const trimmed = opt.trim();
-    if (trimmed.length >= 1 && "ABCD".includes(trimmed[0].toUpperCase())) {
-      return trimmed[0].toUpperCase();
-    }
-    return trimmed;
-  };
-
   const handleSelectOption = (optionText) => {
-    const letter = extractLetter(optionText);
     setAnswers((prev) => ({
       ...prev,
-      [currentQ.question_id]: letter,
+      [currentQ.question_id]: optionText,
     }));
   };
 
@@ -128,8 +118,7 @@ export default function ActiveTest({ subject, subtopic, questions, onSubmitTest,
 
         <div className="mock-options-group">
           {currentQ.options.map((opt, idx) => {
-            const letter = extractLetter(opt);
-            const isSelected = answers[currentQ.question_id] === letter;
+            const isSelected = answers[currentQ.question_id] === opt;
             return (
               <div
                 key={idx}

@@ -61,3 +61,53 @@ def all_sub_topics(db=None, user_id=None):
     return topics
 
 DEMO_USER_ID = "demo_user"
+
+# Target URL for LinkedIn import demo
+LINKEDIN_TARGET_URL = "https://www.linkedin.com/in/aishwarya-madam-96296a1b7/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3BvJ%2FWJG9WQVGxNxAookNlcw%3D%3D"
+
+LINKEDIN_AISHWARYA_PROFILE = {
+  "profile": {
+    "name": "Aishwarya",
+    "headline": "IT Project & Program Manager | Cloud Storage & Infrastructure | Agile & Waterfall Lead",
+    "linkedin_url": "https://www.linkedin.com/in/aishwarya",
+    "summary": "Results-driven IT Project and Program Manager with expertise spanning enterprise cloud infrastructure, cybersecurity fundamentals, and strategic IT operations.",
+    "skills": [
+      {"name": "Agile & Waterfall Methodologies", "category": "conceptual", "days_dormant": 15},
+      {"name": "Cross-functional Collaborations", "category": "conceptual", "days_dormant": 10},
+      {"name": "Strategic Planning", "category": "conceptual", "days_dormant": 30},
+      {"name": "Business Acumen", "category": "conceptual", "days_dormant": 20},
+      {"name": "Project Management", "category": "conceptual", "days_dormant": 5},
+      {"name": "IT Project & Program Management", "category": "conceptual", "days_dormant": 10},
+      {"name": "Stakeholder Management", "category": "conceptual", "days_dormant": 12},
+      {"name": "Salesforce.com", "category": "procedural", "days_dormant": 60},
+      {"name": "Jira", "category": "procedural", "days_dormant": 5},
+      {"name": "Confluence", "category": "procedural", "days_dormant": 8},
+      {"name": "Cloud Security", "category": "conceptual", "days_dormant": 45},
+      {"name": "Dell PowerFlex Rack", "category": "procedural", "days_dormant": 120},
+      {"name": "Microsoft Excel", "category": "procedural", "days_dormant": 2},
+      {"name": "Cloud Storage", "category": "procedural", "days_dormant": 90}
+    ],
+    "certifications": [
+      {
+        "title": "Dell Certified Associate Information Storage and Management Version 5.0",
+        "issuer": "Dell Technologies"
+      },
+      {
+        "title": "ITIL® v4 Foundation",
+        "issuer": "AXELOS Global Best Practice"
+      },
+      {
+        "title": "Introduction to Cybersecurity",
+        "issuer": "Cisco"
+      },
+      {
+        "title": "Project Management Foundations",
+        "issuer": "PMI"
+      },
+      {
+        "title": "Generative AI - Fundamentals",
+        "issuer": "Industry Credential"
+      }
+    ]
+  }
+}
