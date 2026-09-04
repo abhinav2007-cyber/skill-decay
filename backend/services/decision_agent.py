@@ -189,7 +189,7 @@ def run_decision_agent(
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.2,
-                max_tokens=1024,
+                max_tokens=4096,
                 call_site="decision_agent",
             )
             decisions = _parse_decision_response(raw)

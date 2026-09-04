@@ -360,3 +360,110 @@ def run_answer(
         user_id, final_state.get("workflow_status")
     )
     return final_state
+
+
+def run_full_test_submission(
+    db,
+    user_id: str,
+    subject: str,
+    sub_topic: str,
+    cycle_id: str,
+    answers: list[dict],
+) -> dict:
+    """
+    Complete SDA feedback loop for a submitted test:
+      1. Grade each question against stored correct answers and append to quiz_responses.
+      2. Mark cycle consumed.
+      3. Update Signal Engine & pyBKT with the newly added responses.
+      4. Invoke Featherless Decision Agent on the newly updated signals.
+      5. Return graded answers, score, accuracy, prior & updated signals, and agent decision.
+    """
+    from backend.services.grading import grade_answer
+    from backend.services.signal_engine import get_signal_bundle, recalculate_and_persist_state
+    from backend.services.decision_agent import run_decision_agent
+    from backend.domain import get_category
+
+    # Prior signals before grading
+    prior_signals = get_signal_bundle(db, user_id)
+
+    detailed_answers = []
+    correct_count = 0
+    updated_subtopics = set()
+    
+    from backend.database import QuizCycle
+    cycle = db.query(QuizCycle).filter_by(cycle_id=cycle_id, user_id=user_id).first()
+
+    for ans in answers:
+        q_id = ans.get("question_id")
+        opt = ans.get("selected_option", "")
+        
+        # find question's actual subtopic
+        actual_st = sub_topic
+        if cycle and cycle.questions:
+            for q in cycle.questions:
+                if q.get("question_id") == q_id:
+                    actual_st = q.get("sub_topic") or sub_topic
+                    break
+        
+        updated_subtopics.add(actual_st)
+        
+        is_corr, explanation = grade_answer(
+            db=db,
+            user_id=user_id,
+            sub_topic=sub_topic,
+            question_id=q_id,
+            selected_option=opt,
+            cycle_id=cycle_id,
+        )
+        if is_corr:
+            correct_count += 1
+        detailed_answers.append({
+            "question_id": q_id,
+            "correct": is_corr,
+            "explanation": explanation,
+            "sub_topic": actual_st
+        })
+
+    # Recalculate signals for all touched subtopics and persist state (pyBKT, decay, accuracy)
+    for st in updated_subtopics:
+        category = get_category(subject, st, db, user_id)
+        recalculate_and_persist_state(db, user_id, subject, st, category)
+
+    # Fetch newly updated signal bundle
+    updated_signals = get_signal_bundle(db, user_id)
+
+    # Call Featherless Decision Agent with the updated signal bundle
+    decisions = []
+    try:
+        decisions = run_decision_agent(updated_signals, user_id)
+    except Exception as exc:
+        logger.error("Decision agent call failed after test submission: %s", exc)
+
+    # Find decision relevant to this test or the primary decision
+    target_decision = None
+    for d in decisions:
+        if d.get("subtopic") == sub_topic:
+            target_decision = d
+            break
+    if not target_decision and decisions:
+        target_decision = decisions[0]
+
+    return {
+        "cycle_id": cycle_id,
+        "subject": subject,
+        "sub_topic": sub_topic,
+        "total_questions": len(detailed_answers),
+        "correct_count": correct_count,
+        "accuracy_pct": round((correct_count / len(detailed_answers)) * 100) if detailed_answers else 0,
+        "detailed_answers": detailed_answers,
+        "prior_signals": prior_signals,
+        "updated_signals": updated_signals,
+        "agent_decisions": decisions,
+        "primary_decision": target_decision,
+        "final_state": {
+            "workflow_status": "complete",
+            "agent_decisions": decisions,
+            "current_signals": updated_signals
+        }
+    }
+

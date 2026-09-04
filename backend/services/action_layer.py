@@ -32,10 +32,31 @@ def _generate_quiz(
     signal_summary: str,
 ) -> list[dict]:
     """
-    Generate 2-3 MCQs for the given sub-topic via Featherless.ai.
-    Returns list of question dicts including correct_answer (stored server-side only).
-    Each question gets a unique question_id: f"{sub_topic}_{cycle_id}_{n}"
+    Retrieve or generate 2-3 MCQs for the given sub-topic.
+    First checks trusted SDA MCQ dataset (sda_questions.py).
+    If dataset questions exist, uses them with unique question_ids.
+    Otherwise falls back to Featherless.ai.
     """
+    from backend.services.sda_questions import get_questions_by_subtopic
+
+    dataset_qs = get_questions_by_subtopic(skill, sub_topic)
+    if dataset_qs:
+        import random
+        # Pick up to 5 questions (or 3 for concise quiz cycle)
+        selected = dataset_qs[:5] if len(dataset_qs) >= 5 else dataset_qs
+        questions = []
+        for n, q in enumerate(selected):
+            q_id = q.get("question_id") or f"{sub_topic}_{cycle_id}_{n}"
+            questions.append({
+                "question_id": q_id,
+                "question": q["question"],
+                "options": [q["option_a"], q["option_b"], q["option_c"], q["option_d"]],
+                "correct_answer": q["correct_option"],
+                "explanation": q["explanation"],
+            })
+        return questions
+
+    # Fallback to LLM generation if subtopic not in local dataset
     system_prompt = f"""You are an expert technical quiz generator for skill assessment.
 Generate exactly 3 multiple-choice questions (MCQs) to assess a learner's knowledge of:
   Skill: {skill}
@@ -53,13 +74,6 @@ OUTPUT FORMAT: Respond ONLY with a valid JSON array (no markdown):
   }},
   ...
 ]
-
-Rules:
-- Questions must be specific and non-trivial
-- Exactly 4 options per question (A through D)
-- correct_answer must match one of the options exactly
-- No ambiguous or trick questions
-- Appropriate difficulty: {"procedural" if category == "procedural" else "conceptual"} knowledge
 """
 
     try:
@@ -70,23 +84,18 @@ Rules:
             call_site="action_layer_quiz",
         )
 
-        # Parse JSON
         text = raw.strip()
         start = text.find("[")
         end = text.rfind("]")
         if start != -1 and end != -1 and end > start:
             text = text[start:end+1]
-        elif text.startswith("```"):
-            lines = text.split("\n")
-            text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
 
         questions_raw = json.loads(text)
         if not isinstance(questions_raw, list):
             raise ValueError("Expected JSON array")
 
-        # Assign question_ids and validate structure
         questions = []
-        for n, q in enumerate(questions_raw[:3]):  # max 3
+        for n, q in enumerate(questions_raw[:5]):
             question_id = f"{sub_topic}_{cycle_id}_{n}"
             questions.append({
                 "question_id":    question_id,
@@ -98,11 +107,8 @@ Rules:
 
         return questions
 
-    except FeatherlessAllKeysFailedError as exc:
-        logger.error("Quiz generation failed (all keys): %s", exc)
-        return []
     except Exception as exc:
-        logger.error("Quiz generation parse/call error: %s", exc)
+        logger.error("Quiz generation error: %s", exc)
         return []
 
 

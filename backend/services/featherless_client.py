@@ -65,31 +65,12 @@ def chat_complete(
     max_tokens: int = 2048,
     call_site: str = "unknown",  # for logging only, never the key
 ) -> str:
-    """
-    Send a chat completion request to Featherless.ai with key rotation.
-
-    Args:
-        messages: OpenAI-format message list [{"role": ..., "content": ...}]
-        temperature: sampling temperature
-        max_tokens: max output tokens
-        call_site: a label like "decision_agent" / "action_layer" / "strength_report"
-                   used only in log messages — never the key itself
-
-    Returns:
-        The assistant's message content as a string.
-
-    Raises:
-        FeatherlessAllKeysFailedError: if all keys fail.
-    """
     keys = _get_keys()
     last_exc: Optional[Exception] = None
-
     for key_idx, key in enumerate(keys):
         key_label = f"key_{key_idx + 1}"  # never log the actual key
         try:
-            logger.debug(
-                "[featherless/%s] Attempting with %s", call_site, key_label
-            )
+            logger.debug("[featherless/%s] Attempting with %s", call_site, key_label)
             response = httpx.post(
                 f"{FEATHERLESS_BASE_URL}/chat/completions",
                 headers={
@@ -106,10 +87,74 @@ def chat_complete(
             )
 
             if response.status_code in ROTATION_TRIGGER_STATUSES:
-                logger.warning(
-                    "[featherless/%s] %s returned %d — rotating to next key",
-                    call_site, key_label, response.status_code
+                logger.warning("[featherless/%s] %s returned %d — rotating to next key", call_site, key_label, response.status_code)
+                last_exc = httpx.HTTPStatusError(
+                    f"HTTP {response.status_code}",
+                    request=response.request,
+                    response=response,
                 )
+                continue
+
+            response.raise_for_status()
+            data = response.json()
+            content = data["choices"][0]["message"]["content"]
+            logger.debug("[featherless/%s] Success with %s, tokens_used=%s", call_site, key_label, data.get("usage", {}).get("total_tokens", "?"))
+            return content
+
+        except httpx.TimeoutException as exc:
+            logger.warning("[featherless/%s] %s timed out after %ss", call_site, key_label, CALL_TIMEOUT_SECONDS)
+            last_exc = exc
+            continue
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in ROTATION_TRIGGER_STATUSES:
+                logger.warning("[featherless/%s] %s auth/rate-limit — rotating", call_site, key_label)
+                last_exc = exc
+                continue
+            logger.error("[featherless/%s] %s HTTP error %d", call_site, key_label, exc.response.status_code)
+            last_exc = exc
+            continue
+        except Exception as exc:
+            logger.error("[featherless/%s] %s unexpected error: %s", call_site, key_label, type(exc).__name__)
+            last_exc = exc
+            continue
+
+    raise FeatherlessAllKeysFailedError(
+        f"All Featherless keys failed for call_site={call_site}. "
+        f"Last error: {last_exc}"
+    ) from last_exc
+
+async def featherless_chat(
+    messages: list[dict],
+    *,
+    temperature: float = 0.3,
+    max_tokens: int = 2048,
+    call_site: str = "unknown",  # for logging only, never the key
+) -> str:
+    keys = _get_keys()
+    last_exc: Optional[Exception] = None
+
+    for key_idx, key in enumerate(keys):
+        key_label = f"key_{key_idx + 1}"  # never log the actual key
+        try:
+            logger.debug("[featherless/%s] Attempting with %s", call_site, key_label)
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{FEATHERLESS_BASE_URL}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": FEATHERLESS_MODEL,
+                        "messages": messages,
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                    },
+                    timeout=CALL_TIMEOUT_SECONDS,
+                )
+
+            if response.status_code in ROTATION_TRIGGER_STATUSES:
+                logger.warning("[featherless/%s] %s returned %d — rotating to next key", call_site, key_label, response.status_code)
                 last_exc = httpx.HTTPStatusError(
                     f"HTTP {response.status_code}",
                     request=response.request,
@@ -121,41 +166,25 @@ def chat_complete(
 
             data = response.json()
             content = data["choices"][0]["message"]["content"]
-            logger.debug(
-                "[featherless/%s] Success with %s, tokens_used=%s",
-                call_site, key_label,
-                data.get("usage", {}).get("total_tokens", "?")
-            )
+            logger.debug("[featherless/%s] Success with %s, tokens_used=%s", call_site, key_label, data.get("usage", {}).get("total_tokens", "?"))
             return content
 
         except httpx.TimeoutException as exc:
-            logger.warning(
-                "[featherless/%s] %s timed out after %ss",
-                call_site, key_label, CALL_TIMEOUT_SECONDS
-            )
+            logger.warning("[featherless/%s] %s timed out after %ss", call_site, key_label, CALL_TIMEOUT_SECONDS)
             last_exc = exc
             continue
 
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code in ROTATION_TRIGGER_STATUSES:
-                logger.warning(
-                    "[featherless/%s] %s auth/rate-limit — rotating",
-                    call_site, key_label
-                )
+                logger.warning("[featherless/%s] %s auth/rate-limit — rotating", call_site, key_label)
                 last_exc = exc
                 continue
-            logger.error(
-                "[featherless/%s] %s HTTP error %d",
-                call_site, key_label, exc.response.status_code
-            )
+            logger.error("[featherless/%s] %s HTTP error %d", call_site, key_label, exc.response.status_code)
             last_exc = exc
             continue
 
         except Exception as exc:
-            logger.error(
-                "[featherless/%s] %s unexpected error: %s",
-                call_site, key_label, type(exc).__name__
-            )
+            logger.error("[featherless/%s] %s unexpected error: %s", call_site, key_label, type(exc).__name__)
             last_exc = exc
             continue
 

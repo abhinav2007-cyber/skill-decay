@@ -74,8 +74,26 @@ def grade_answer(
         )
 
     # Step 3: Grade
-    correct_answer = matching_question.get("correct_answer", "")
-    is_correct = selected_option.strip() == correct_answer.strip()
+    correct_answer = matching_question.get("correct_answer", "").strip()
+    sel = selected_option.strip()
+
+    # Match exact or match by option letter prefix (e.g. "C" matches "C" or "C) ..." or "C. ...")
+    def _extract_letter(s: str) -> str:
+        s = s.strip()
+        if len(s) == 1 and s.upper() in "ABCD":
+            return s.upper()
+        if len(s) > 1 and s[0].upper() in "ABCD" and s[1] in (")", ".", " ", ":", "-"):
+            return s[0].upper()
+        return s
+
+    sel_letter = _extract_letter(sel)
+    cor_letter = _extract_letter(correct_answer)
+
+    if sel_letter in "ABCD" and cor_letter in "ABCD":
+        is_correct = (sel_letter == cor_letter)
+    else:
+        is_correct = (sel.lower() == correct_answer.lower())
+
     explanation = matching_question.get("explanation", "")
 
     # Check if this specific question has already been answered
@@ -87,10 +105,14 @@ def grade_answer(
 
     # Write quiz_responses (append-only)
     now = get_simulated_now(db)
+    
+    # Use the question's sub_topic if available, otherwise fallback to cycle's sub_topic
+    actual_sub_topic = matching_question.get("sub_topic") or cycle.sub_topic
+    
     db.add(QuizResponse(
         user_id=user_id,
         skill=cycle.skill,
-        sub_topic=cycle.sub_topic,
+        sub_topic=actual_sub_topic,
         question_id=question_id,
         correct=is_correct,
         timestamp=now,
@@ -103,6 +125,15 @@ def grade_answer(
     ).count() + 1
     if answered_count >= len(questions):
         cycle.consumed = True
+
+    # Update last_used_at on subtopic state
+    from backend.database import SubTopicState
+    st_row = db.query(SubTopicState).filter_by(
+        user_id=user_id, skill=cycle.skill, sub_topic=actual_sub_topic
+    ).first()
+    if st_row:
+        st_row.last_used_at = now
+
     db.flush()
 
     logger.info(

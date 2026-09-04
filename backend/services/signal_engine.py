@@ -215,8 +215,7 @@ def get_signal_bundle(db: Session, user_id: str) -> dict:
     """
     now = get_simulated_now(db)
     result: dict[str, dict] = {}
-
-    for skill, sub_topic, category in all_sub_topics():
+    for skill, sub_topic, category in all_sub_topics(db, user_id):
         try:
             state = recalculate_and_persist_state(db, user_id, skill, sub_topic, category)
             bundle = _build_bundle(state, now)
